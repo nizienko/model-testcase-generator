@@ -40,12 +40,14 @@ class Model(private val projectName: String) {
 
     fun drawUml(): String = StringBuilder().apply {
         append("@startuml\n")
-        append("User --> (${entryAction.leadTo}) : ${entryAction.title}\n")
+        append("package $projectName {\n")
+        append("User -> (${entryAction.leadTo}) : ${entryAction.title}\n")
         states.values.forEach { state ->
             state.actions.forEach { action ->
                 append("(${state.title}) --> (${action.leadTo}) : ${action.title}\n")
             }
         }
+        append("}\n")
         append("@enduml\n")
     }.toString()
 
