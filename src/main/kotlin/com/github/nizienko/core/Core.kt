@@ -77,7 +77,7 @@ class Model(private val projectName: String) {
     }
 
     fun export() {
-        val dir = Paths.get("out").resolve("tests").resolve(projectName)
+        val dir = Paths.get("out").resolve("testCases").resolve(projectName)
         dir.toFile().mkdirs()
         dir.resolve("testCases.txt").toFile().writeText(StringBuilder().apply { generate().forEach { append(it.toString() + "\n") } }.toString())
         dir.resolve("model.puml").toFile().writeText(drawUml())
