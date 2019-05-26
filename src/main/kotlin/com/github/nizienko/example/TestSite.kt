@@ -1,6 +1,6 @@
-package com.jetbrains.test.example
+package com.github.nizienko.example
 
-import com.jetbrains.test.core.model
+import com.github.nizienko.core.model
 
 fun main() {
     model("testsite.com") {

@@ -1,4 +1,4 @@
-package com.jetbrains.test.core
+package com.github.nizienko.core
 
 import java.nio.file.Paths
 import kotlin.text.StringBuilder
