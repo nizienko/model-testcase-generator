@@ -50,9 +50,6 @@ class Model(private val projectName: String) {
     }.toString()
 
     fun generate(): List<Test> {
-        val entryState =
-            states[entryAction.leadTo] ?: throw IllegalMonitorStateException("Define state ${entryAction.leadTo}")
-
         val actionsCreated = mutableListOf<Action>()
         val actionsChecked = mutableSetOf<Action>()
         val entryActionProcess = ActionProcess(actionsCreated, actionsChecked, entryAction)
