@@ -3,7 +3,8 @@ package com.github.nizienko.core
 import java.nio.file.Paths
 import kotlin.text.StringBuilder
 
-fun model(projectName: String, function: Model.() -> Unit): Model {
+
+fun model(projectName: String, function: Model.() -> Unit = {}): Model {
     return Model(projectName).apply(function)
 }
 
@@ -12,8 +13,8 @@ class Test(val title: String, val steps: List<Action>) {
         return StringBuilder().apply {
             append("Test: $title\n")
             var n = 1
-            steps.forEach {
-                append("$n. ${it.title} --> ${it.leadTo}\n")
+            steps.forEach { a ->
+                append("$n. ${a.title} --> ${a.expextedResult?.let { it + ". " + a.leadTo } ?: a.leadTo}\n")
                 n++
             }
             append("--------------\n")
@@ -21,13 +22,34 @@ class Test(val title: String, val steps: List<Action>) {
     }
 }
 
+infix operator fun Model.get(title: String) = NotFinishedState(this, title)
+class NotFinishedState(val model: Model, val title: String)
+
+infix fun NotFinishedState.has(function: State.() -> Unit) {
+    val state = State(title).apply(function)
+    model.states[title] = state
+}
+
+infix fun State.act(title: String) = NotFinishedAcction(this, title)
+class NotFinishedAcction(val state: State, val title: String)
+
+infix fun NotFinishedAcction.expect(expectingResult: String) =
+    NotFinishedAcctionWithExpectingResult(state, title, expectingResult)
+
+class NotFinishedAcctionWithExpectingResult(val state: State, val title: String, val expectedResult: String)
+
+infix fun NotFinishedAcctionWithExpectingResult.at(state: String) {
+    this.state.actions.add(Action(title, expectedResult, state))
+}
+
 class Model(private val projectName: String) {
     private lateinit var entryAction: Action
-    private val states = mutableMapOf<String, State>()
+    val states = mutableMapOf<String, State>()
 
-    fun entryAction(title: String, leadTo: String) {
-        entryAction = Action(title, leadTo)
+    fun entryAction(title: String, expectedResult: String? = null, leadTo: String) {
+        entryAction = Action(title, expectedResult, leadTo)
     }
+
 
     fun state(title: String, function: State.() -> Unit) {
         val state = State(title).apply(function)
@@ -79,10 +101,29 @@ class Model(private val projectName: String) {
     }
 
     fun export() {
-        val dir = Paths.get("out").resolve("testCases").resolve(projectName)
+        val dir = Paths.get("out").resolve("testcases").resolve(projectName)
         dir.toFile().mkdirs()
-        dir.resolve("testCases.txt").toFile().writeText(StringBuilder().apply { generate().forEach { append(it.toString() + "\n") } }.toString())
-        dir.resolve("model.puml").toFile().writeText(drawUml())
+        val tests = generate()
+        val uml = drawUml()
+        dir.resolve("testcases.txt").toFile()
+            .writeText(StringBuilder().apply { tests.forEach { append(it.toString() + "\n") } }.toString())
+        dir.resolve("model.puml").toFile().writeText(uml)
+
+        dir.resolve("testcases.md").toFile().writeText(StringBuilder().apply {
+            var s = 1
+            tests.forEach { test ->
+                append("$s ${test.title}\n\n")
+                append("| | Step | Expected result |\n")
+                append("|-----:|:-----|-----:|\n")
+                var n = 1
+                test.steps.forEach { a ->
+                    append("| $n | ${a.title} | ${a.expextedResult ?: a.leadTo} |\n")
+                    n++
+                }
+                s++
+                append("\n")
+            }
+        }.toString())
     }
 
 
@@ -122,8 +163,13 @@ class Model(private val projectName: String) {
 class State(val title: String) {
     val actions = mutableListOf<Action>()
 
-    fun action(title: String, leadTo: String) {
-        actions.add(Action(title, leadTo))
+
+    fun action(title: String, leadTo: String = this@State.title) {
+        actions.add(Action(title, null, leadTo))
+    }
+
+    fun action(title: String, expectedResult: String, leadTo: String = this@State.title) {
+        actions.add(Action(title, expectedResult, leadTo))
     }
 
     override fun toString(): String {
@@ -132,8 +178,8 @@ class State(val title: String) {
 
 }
 
-class Action(val title: String, val leadTo: String) {
+class Action(val title: String, val expextedResult: String?, val leadTo: String) {
     override fun toString(): String {
-        return "Action(title='$title', leadTo=$leadTo)"
+        return "Action(title='$title', expectedResult='$expextedResult', leadTo=$leadTo)"
     }
 }
