@@ -14,6 +14,7 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
+    compile("guru.nidi:graphviz-kotlin:0.8.7")
 }
 
 tasks.withType<KotlinCompile> {

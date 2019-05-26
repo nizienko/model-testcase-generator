@@ -24,6 +24,5 @@ fun main() {
     tv["Switched off"] has {
         this act "Press Power button" expect "TV switched on" at "Channel mode"
     }
-
     tv.export()
 }

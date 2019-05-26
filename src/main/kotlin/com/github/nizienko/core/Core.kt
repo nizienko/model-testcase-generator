@@ -1,6 +1,12 @@
 package com.github.nizienko.core
 
+import guru.nidi.graphviz.*
+import guru.nidi.graphviz.attribute.*
+import guru.nidi.graphviz.engine.Format
+import java.io.File
 import java.nio.file.Paths
+import javax.swing.SpringLayout.NORTH
+import javax.swing.SpringLayout.SOUTH
 import kotlin.text.StringBuilder
 
 
@@ -73,6 +79,24 @@ class Model(private val projectName: String) {
         append("@enduml\n")
     }.toString()
 
+    fun drawImage(file: File) {
+        graph(directed = true) {
+            edge["color" eq "blue", Arrow.VEE, Style.DOTTED]
+            node[Color.BLUE, Shape.RECTANGLE]
+            "User"[Color.YELLOW, Style.FILLED, Shape.CIRCLE]
+            graph[RankDir.TOP_TO_BOTTOM]
+//            entryAction.title[Shape.RECTANGLE, Color.GREEN]
+            ("User" -  entryAction.leadTo)[Label.html("<font color='blue'>${entryAction.title}</font>")]
+            states.values.forEach { state ->
+                state.actions.forEach { action ->
+//                    action.title[Shape.RECTANGLE, Color.GREEN]
+                    (state.title - action.leadTo)[Label.html("<font color='blue'>${action.title}</font>")]
+                }
+            }
+        }.toGraphviz().render(Format.PNG).toFile(file)
+    }
+
+
     fun generate(): List<Test> {
         val actionsCreated = mutableListOf<Action>()
         val actionsChecked = mutableSetOf<Action>()
@@ -110,6 +134,7 @@ class Model(private val projectName: String) {
         dir.resolve("model.puml").toFile().writeText(uml)
 
         dir.resolve("testcases.md").toFile().writeText(StringBuilder().apply {
+            append("![$projectName](model.png?raw=true)\n\n")
             var s = 1
             tests.forEach { test ->
                 append("$s ${test.title}\n\n")
@@ -124,6 +149,7 @@ class Model(private val projectName: String) {
                 append("\n")
             }
         }.toString())
+        drawImage(dir.resolve("model.png").toFile())
     }
 
 
